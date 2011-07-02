@@ -1,0 +1,18 @@
+{
+  "author": "Yorick",
+  "name": "scgi-server",
+  "description": "SCGI (Simple Common Gateway Interface) server",
+  "version": "0.0.1",
+  "files": ["index.js"],
+  "repository": {
+    "url": ""
+  },
+  "engines": {
+    "node": "*"
+  },
+  "dependencies": {
+    "binary": ">=0.2.1"
+  },
+  "devDependencies": {},
+  "main": "index.js"
+}
