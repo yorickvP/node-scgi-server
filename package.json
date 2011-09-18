@@ -5,7 +5,8 @@
   "version": "0.0.2",
   "files": ["index.js"],
   "repository": {
-    "url": ""
+    "type": "git",
+    "url": "http://github.com/yorickvP/node-scgi-server.git"
   },
   "engines": {
     "node": "*"
