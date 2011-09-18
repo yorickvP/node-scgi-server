@@ -2,7 +2,7 @@
   "author": "Yorick",
   "name": "scgi-server",
   "description": "SCGI (Simple Common Gateway Interface) server",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "files": ["index.js"],
   "repository": {
     "url": ""
@@ -11,7 +11,7 @@
     "node": "*"
   },
   "dependencies": {
-    "binary": ">=0.2.1"
+    "protoparse": "~0.0"
   },
   "devDependencies": {},
   "main": "index.js"

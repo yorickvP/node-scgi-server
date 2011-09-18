@@ -1,6 +1,7 @@
-/* requires substack/node-binary and dependencies (npm install binary) */
+/* requires node-protoparse (npm install protoparse).
+ * or just install this using npm install scgi-server */
 var    net = require('net')
-  , Binary = require('binary')
+  , Parser = require('protoparse')
 
 module.exports = SCGIServer
 
@@ -12,16 +13,18 @@ function SCGIServer(server) {
     }
     server.on('connection', function connectionHandler(socket) {
         var headers = {}
-        Binary.stream(socket)
+        Parser.Stream(socket)
             .scan('len', ':')
             .tap(function(vars) {
                 if (isNaN(+vars.len)) {
-                    socket.end() // get it to stop parsing?
+                    socket.end()
+                    this.stop()
                     server.emit('request', 'invalid header length in SCGI request', socket)
                     return            }
                 var len = +vars.len
                 if (len == 0)         {
-                    socket.end() // get it to stop parsing?
+                    socket.end()
+                    this.stop()
                     server.emit('request', 'no headers specified in SCGI request', socket)
                     return            }
                 this.loop(function(end, vars) {
@@ -39,7 +42,8 @@ function SCGIServer(server) {
                 var l = 0
                 if (headers['CONTENT_LENGTH']) l = +headers['CONTENT_LENGTH'].toString('ascii')
                 if (isNaN(l)) {
-                    socket.end() // get it to stop parsing?
+                    socket.end()
+                    this.stop()
                     server.emit('request', 'invalid content length header', socket, headers)
                     return
                 }
