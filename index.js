@@ -1,8 +1,9 @@
+/*jshint asi:true laxbreak:true */
 /* requires node-protoparse (npm install protoparse).
  * or just install this using npm install scgi-server */
 var    net = require('net')
   , Parser = require('protoparse')
-
+ , EventEmitter = require('events').EventEmitter
 module.exports = SCGIServer
 
 function SCGIServer(server) {
@@ -11,6 +12,8 @@ function SCGIServer(server) {
         server = net.createServer()
         server.listen(port)
     }
+    var self = this
+    EventEmitter.call(this)
     server.on('connection', function connectionHandler(socket) {
         var headers = {}
         Parser.Stream(socket)
@@ -19,13 +22,13 @@ function SCGIServer(server) {
                 if (isNaN(+vars.len)) {
                     socket.end()
                     this.stop()
-                    server.emit('request', 'invalid header length in SCGI request', socket)
+                    self.emit('request', 'invalid header length in SCGI request', socket)
                     return            }
                 var len = +vars.len
                 if (len == 0)         {
                     socket.end()
                     this.stop()
-                    server.emit('request', 'no headers specified in SCGI request', socket)
+                    self.emit('request', 'no headers specified in SCGI request', socket)
                     return            }
                 this.loop(function(end, vars) {
                     this.scan('key', new Buffer([0]))
@@ -44,20 +47,20 @@ function SCGIServer(server) {
                 if (isNaN(l)) {
                     socket.end()
                     this.stop()
-                    server.emit('request', 'invalid content length header', socket, headers)
+                    self.emit('request', 'invalid content length header', socket, headers)
                     return
                 }
                 vars.content_length = l
             })
             .buffer('data', 'content_length')
             .tap(function(vars) {
-                server.emit('request', null, socket, function header(n, encoding) {
+                self.emit('request', null, socket, function header(n, encoding) {
                     return (headers[n] ? (encoding == 'buffer' ? headers[n] :
                             headers[n].toString(encoding || 'ascii')) : undefined) }, vars.data)
             })
     })
-    return server
+    return self
 }
 
-
+SCGIServer.prototype = new EventEmitter()
 
