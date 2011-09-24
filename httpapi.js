@@ -7,7 +7,7 @@ var SCGIServer = require('./index.js')
 exports.Server = function Server() {
     net.Server.call(this)
     EventEmitter.call(this)
-    this._scgi = new SCGIServer(this)
+    this._scgi = new SCGIServer(this, true) // pass true to stop buffering up post data
     var self = this
     this._scgi.on('request', function(error, socket, headers, data) {
         if(error) return self.emit('clientError', error)
@@ -27,12 +27,18 @@ exports.ServerRequest = function ServerRequest(socket, headers, data) {
     this.httpVersion = '1.0'
     this.httpVersionMajor = 1
     this.httpVersionMinor = 0
+    this.headers = headers()
     var encoding = null
             , self = this
     this.setEncoding = function(e) { encoding = e }
     process.nextTick(function() {
-        self.emit('data', data.toString(encoding))
-        self.emit('end') })}
+        socket.removeAllListeners('data')
+        data.forEach(function(data) {
+            self.emit('data', encoding ? data.toString(encoding) : data) })
+        data.length = 0
+        socket.on('data', self.emit.bind(self, 'data'))
+        if (!socket.writable) self.emit('end')
+        else socket.on('end', self.emit.bind(self, 'end')) })}
 
 exports.ServerRequest.prototype = new EventEmitter()
 exports.ServerRequest.pause = function() { throw "pausing not implemented" }
@@ -47,6 +53,7 @@ exports.ServerResponse = function ServerResponse(req) {
     this.__defineGetter__('writable', function() { return self.connection.writable })
     this.destroy = this.connection.destroy.bind(this.connection)
     this.destroySoon = this.connection.destroySoon.bind(this.connection)
+    this._hasBody = req.method !== 'HEAD'
     this._head_written = false
     this._headers = {}
     this.statusCode = 200 }
@@ -54,36 +61,61 @@ exports.ServerResponse = function ServerResponse(req) {
 util.inherits(exports.ServerResponse, EventEmitter)
 var CRLF = '\r\n'
 ;(function(i, k) { for(var j in k) i[j] = k[j]})(exports.ServerResponse.prototype,
-  { write: function write() {
-    if (!this._head_written) this.writeHead()
-    // todo: requests without body
+  { write: function write(chunk) {
+    if (!this._headerSent) this.writeHead()
+    if (!this._hasBody) {
+        console.error('This type of response MUST NOT have a body. Ignoring write() calls.')
+        return }
+
+    if (typeof chunk !== 'string' && !Buffer.isBuffer(chunk) && !Array.isArray(chunk))
+        throw new TypeError('first argument must be a string, Array, or Buffer')
+
+    if (chunk.length === 0) return false
     this.connection.write.apply(this.connection, arguments) }
 
   , end: function end() {
-    if (arguments.length) this.write.apply(this, arguments)
-    if (!this._head_written) this.writeHead()
+    if (arguments.length && arguments[0]) this.write.apply(this, arguments)
+    if (!this._headerSent) this.writeHead()
     this.connection.end() }
     
   , addTrailers: function addTrailers() {
-      throw "trailers not implemented" }
+    throw "trailers not implemented" }
       
-  , writeHead: function writeHead(statuscode, reason, headers) {
+  , setHeader: function setHeader(name, value) {
+    this._headers[name] = value }
+
+  , getHeader: function getHeader(name) {
+    var n = ("" + name).toLowerCase()
+      , r, h = this._headers
+    Object.keys(h).forEach(function(x) {
+        if (x.toLowerCase() === n) r = h[x] }, this)
+    return r }
+
+  , removeHeader: function removeHeader(name) {
+    var n = ("" + name).toLwoerCase()
+      , h = this._headers
+    Object.keys(h).forEach(function(x) {
+        if (x.toLowerCase() === n) delete h[x] }, this)}
+      
+  , writeHead: function writeHead(statusCode, reason, headers) {
     if (arguments.length == 2) { 
         headers = reason
         reason = "" }
-    if (statuscode) this.statusCode = statuscode
-    if (!reason) reason = http.STATUS_CODES[this.statusCode] || 'unknown'
+    if (!statusCode) statusCode = this.statusCode
+    if (!reason) reason = http.STATUS_CODES[statusCode] || 'unknown'
     var hdr = this._headers
     if (headers) Object.keys(headers).forEach(function(x) {hdr[x] = headers[x]})
     var headtxt = ""
-    headtxt += 'Status: ' + statuscode + ' ' + reason + CRLF
+    headtxt += 'Status: ' + statusCode + ' ' + reason + CRLF
     Object.keys(hdr).forEach(function(k) {
-        if (typeof hdr[k] == 'string')
+        if (!Array.isArray(hdr[k]))
             headtxt += k + ': ' + hdr[k] + CRLF
         else hdr[k].forEach(function(j) {
             headtxt += k + ': ' + j + CRLF })})
     this.connection.write(headtxt + CRLF)
-    this._head_written = true }})
+    this._headerSent = true
+    if (statusCode === 204 || statusCode === 304 || (100 <= statusCode && statusCode <= 199))
+        this._hasBody = false }})
 
 exports.createServer = function createServer(callback) {
     var s = new exports.Server()

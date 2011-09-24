@@ -6,7 +6,7 @@ var    net = require('net')
  , EventEmitter = require('events').EventEmitter
 module.exports = SCGIServer
 
-function SCGIServer(server) {
+function SCGIServer(server, no_buffer) {
     if ('number' == typeof server) {
         var port = server
         server = net.createServer()
@@ -16,7 +16,7 @@ function SCGIServer(server) {
     EventEmitter.call(this)
     server.on('connection', function connectionHandler(socket) {
         var headers = {}
-        Parser.Stream(socket)
+          , p = Parser.Stream(socket)
             .scan('len', ':')
             .tap(function(vars) {
                 if (isNaN(+vars.len)) {
@@ -52,11 +52,20 @@ function SCGIServer(server) {
                 }
                 vars.content_length = l
             })
-            .buffer('data', 'content_length')
-            .tap(function(vars) {
+        if (!no_buffer) p.buffer('data', 'content_length')
+           p.tap(function(vars) {
                 self.emit('request', null, socket, function header(n, encoding) {
+                    if (!n) {
+                        var r = {} // format the headers as lower case http headers
+                        Object.keys(headers)
+                              .filter(function(i) {return i.indexOf('HTTP_') === 0})
+                              .forEach(function(k) {r[k.toLowerCase()
+                                                       .split('_')
+                                                       .slice(1)
+                                                       .join('-')] = header(k)})
+                        return r }
                     return (headers[n] ? (encoding == 'buffer' ? headers[n] :
-                            headers[n].toString(encoding || 'ascii')) : undefined) }, vars.data)
+                            headers[n].toString(encoding || 'ascii')) : undefined) }, no_buffer ? p._buffer : vars.data)
             })
     })
     return self
