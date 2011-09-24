@@ -7,7 +7,7 @@ var SCGIServer = require('./index.js')
 exports.Server = function Server() {
     net.Server.call(this)
     EventEmitter.call(this)
-    this._scgi = new SCGIServer(this, true) // pass true to stop buffering up post data
+    this._scgi = new SCGIServer(this)
     var self = this
     this._scgi.on('request', function(error, socket, headers, data) {
         if(error) return self.emit('clientError', error)

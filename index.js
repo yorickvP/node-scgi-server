@@ -6,7 +6,7 @@ var    net = require('net')
  , EventEmitter = require('events').EventEmitter
 module.exports = SCGIServer
 
-function SCGIServer(server, no_buffer) {
+function SCGIServer(server, do_buffer) {
     if ('number' == typeof server) {
         var port = server
         server = net.createServer()
@@ -52,7 +52,7 @@ function SCGIServer(server, no_buffer) {
                 }
                 vars.content_length = l
             })
-        if (!no_buffer) p.buffer('data', 'content_length')
+        if (do_buffer) p.buffer('data', 'content_length')
            p.tap(function(vars) {
                 self.emit('request', null, socket, function header(n, encoding) {
                     if (!n) {
@@ -65,7 +65,7 @@ function SCGIServer(server, no_buffer) {
                                                        .join('-')] = header(k)})
                         return r }
                     return (headers[n] ? (encoding == 'buffer' ? headers[n] :
-                            headers[n].toString(encoding || 'ascii')) : undefined) }, no_buffer ? p._buffer : vars.data)
+                            headers[n].toString(encoding || 'ascii')) : undefined) }, do_buffer ? vars.data : p._buffer)
             })
     })
     return self
