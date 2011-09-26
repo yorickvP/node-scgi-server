@@ -2,8 +2,8 @@
   "author": "Yorick",
   "name": "scgi-server",
   "description": "SCGI (Simple Common Gateway Interface) server",
-  "version": "0.0.2",
-  "files": ["index.js"],
+  "version": "0.1.0",
+  "files": ["index.js", "httpapi.js"],
   "repository": {
     "type": "git",
     "url": "http://github.com/yorickvP/node-scgi-server.git"
@@ -17,3 +17,4 @@
   "devDependencies": {},
   "main": "index.js"
 }
+
