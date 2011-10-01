@@ -52,7 +52,7 @@ Changes from v0.0.2
 HTTP Emulating API
 ==================
 
-In v0.1.0, I added an API that (loosely) follows the node.js http API. Some features (like trailers or stream pausing/resuming) are missing though.
+In v0.1.0, I added an API that (loosely) follows the node.js http API. Some features (like trailers) are missing though.
 
 Why?
 ----
