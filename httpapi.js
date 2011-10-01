@@ -37,6 +37,7 @@ exports.ServerRequest = function ServerRequest(socket, headers, data) {
         data.forEach(function(data) {
             self.emit('data', encoding ? data.toString(encoding) : data) })
         data.length = 0
+        if (encoding) socket.setEncoding(encoding)
         socket.on('data', self.emit.bind(self, 'data'))
         if (!socket.writable) self.emit('end')
         else socket.on('end', self.emit.bind(self, 'end')) })}
