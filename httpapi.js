@@ -3,6 +3,7 @@ var SCGIServer = require('./index.js')
          , net = require('net')
         , http = require('http')
         , util = require('util')
+      , Stream = require('stream').Stream
 , EventEmitter = require('events').EventEmitter
 exports.Server = function Server() {
     net.Server.call(this)
@@ -41,8 +42,11 @@ exports.ServerRequest = function ServerRequest(socket, headers, data) {
         else socket.on('end', self.emit.bind(self, 'end')) })}
 
 exports.ServerRequest.prototype = new EventEmitter()
-exports.ServerRequest.pause = function() { throw "pausing not implemented" }
-exports.ServerRequest.resume = function() { throw "pausing not implemented" }
+exports.ServerRequest.prototype.pause = function() {
+    this.connection.pause() }
+exports.ServerRequest.prototype.resume = function() {
+    this.connection.resume() }
+exports.ServerRequest.prototype.pipe = Stream.prototype.pipe
 
 exports.ServerResponse = function ServerResponse(req) {
     EventEmitter.call(this)
