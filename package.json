@@ -1,6 +1,7 @@
 {
   "author": "Yorick",
   "name": "scgi-server",
+  "license": "ISC",
   "description": "SCGI (Simple Common Gateway Interface) server",
   "version": "0.1.3",
   "files": [
