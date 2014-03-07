@@ -1,6 +1,8 @@
 SCGI-Server
 ===========
 
+# This package has some bugs (it terminates the connection too soon in some cases), and I no longer use it myself. Be careful. (It was written for node v0.6, and hasn't been tested on newer versions)
+
 [Simple Common Gateway Interface](http://en.wikipedia.org/wiki/Simple_Common_Gateway_Interface) server for [node.js](http://nodejs.org/).
 
 This is basically a rewritten and updated version of [orlandov's node-scgi](http://github.com/orlandov/node-scgi).
